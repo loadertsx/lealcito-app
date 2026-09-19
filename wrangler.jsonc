@@ -8,10 +8,56 @@
 	"compatibility_date": "2026-09-16",
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
+		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+		"ENVIRONMENT": "production"
 	},
+	/**
+	 * D1 (production). This is the default environment, so `wrangler deploy`
+	 * and `bun run dev` both resolve it.
+	 *
+	 * `preview_database_id` is what local dev and every `--local` command use as
+	 * the SQLite identity under `.wrangler/state/v3/d1`. It is intentionally not
+	 * a real database UUID: local work can never reach production data.
+	 *
+	 * `migrations_pattern` matches the layout drizzle-kit writes
+	 * (`migrations/<timestamp>_<name>/migration.sql`) instead of wrangler's
+	 * default `migrations/*.sql`.
+	 */
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "lealcito-prod",
+			"database_id": "696643ab-deaa-4c30-95d3-91e5991fec82",
+			"preview_database_id": "lealcito-local",
+			"migrations_dir": "migrations",
+			"migrations_pattern": "migrations/*/migration.sql"
+		}
+	],
 	"observability": {
 		"enabled": true
+	},
+	"env": {
+		/**
+		 * Staging: `wrangler deploy --env stg` (Worker `lealcito-app-stg`).
+		 * `vars` and `d1_databases` are not inherited from the top level, so
+		 * they are repeated here on purpose.
+		 */
+		"stg": {
+			"name": "lealcito-app-stg",
+			"vars": {
+				"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+				"ENVIRONMENT": "staging"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "lealcito-stg",
+					"database_id": "3f5062d9-47f5-4bd6-9700-94b46ffbea86",
+					"migrations_dir": "migrations",
+					"migrations_pattern": "migrations/*/migration.sql"
+				}
+			]
+		}
 	},
 	"upload_source_maps": true
 	/**

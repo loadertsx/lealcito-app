@@ -1,5 +1,6 @@
 {
 	"name": "lealcito-app",
+	"version": "0.0.1",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -7,6 +8,7 @@
 		"dev": "react-router dev",
 		"typecheck": "wrangler types && react-router typegen && tsc -b",
 		"deploy": "bun run build && wrangler deploy",
+		"deploy:stg": "bun run build && wrangler deploy --env stg",
 		"preview": "bun run build && vite preview",
 		"cf-typegen": "wrangler types",
 		"postinstall": "wrangler types",
@@ -15,9 +17,20 @@
 		"rr:routes": "react-router routes",
 		"check:types": "tsc",
 		"check:quality": "biome check .",
-		"check:quality:fix": "biome check . --write --unsafe"
+		"check:quality:fix": "biome check . --write --unsafe",
+		"db:new": "drizzle-kit generate",
+		"db:new:custom": "drizzle-kit generate --custom",
+		"db:migrate:local": "wrangler d1 migrations apply DB --local",
+		"db:migrate:stg": "wrangler d1 migrations apply DB --env stg --remote",
+		"db:migrate:prod": "wrangler d1 migrations apply DB --remote",
+		"db:status:local": "wrangler d1 migrations list DB --local",
+		"db:status:stg": "wrangler d1 migrations list DB --env stg --remote",
+		"db:status:prod": "wrangler d1 migrations list DB --remote",
+		"db:exec:local": "wrangler d1 execute DB --local"
 	},
 	"dependencies": {
+		"dotenv": "^18.0.1",
+		"drizzle-orm": "^1.0.0-rc.4",
 		"isbot": "^5.1.36",
 		"react": "^19.2.8",
 		"react-dom": "^19.2.8",
@@ -31,7 +44,9 @@
 		"@types/node": "^26.6.2",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.7",
+		"drizzle-kit": "^1.0.0-rc.4",
 		"tailwindcss": "^4.2.2",
+		"tsx": "^4.23.13",
 		"typescript": "^5.9.3",
 		"vite": "^8.0.3",
 		"wrangler": "^4.135.0"

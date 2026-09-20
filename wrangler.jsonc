@@ -20,8 +20,8 @@
 	 * a real database UUID: local work can never reach production data.
 	 *
 	 * `migrations_pattern` matches the layout drizzle-kit writes
-	 * (`migrations/<timestamp>_<name>/migration.sql`) instead of wrangler's
-	 * default `migrations/*.sql`.
+	 * (`database/migrations/<timestamp>_<name>/migration.sql`) instead of
+	 * wrangler's default `migrations/*.sql`.
 	 */
 	"d1_databases": [
 		{
@@ -29,8 +29,8 @@
 			"database_name": "lealcito-prod",
 			"database_id": "696643ab-deaa-4c30-95d3-91e5991fec82",
 			"preview_database_id": "lealcito-local",
-			"migrations_dir": "migrations",
-			"migrations_pattern": "migrations/*/migration.sql"
+			"migrations_dir": "database/migrations",
+			"migrations_pattern": "database/migrations/*/migration.sql"
 		}
 	],
 	"observability": {
@@ -53,8 +53,8 @@
 					"binding": "DB",
 					"database_name": "lealcito-stg",
 					"database_id": "3f5062d9-47f5-4bd6-9700-94b46ffbea86",
-					"migrations_dir": "migrations",
-					"migrations_pattern": "migrations/*/migration.sql"
+					"migrations_dir": "database/migrations",
+					"migrations_pattern": "database/migrations/*/migration.sql"
 				}
 			]
 		}

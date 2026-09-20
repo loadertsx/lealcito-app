@@ -97,7 +97,7 @@ wrangler applies it — wrangler owns the `d1_migrations` table and already know
 which database belongs to each environment.
 
 ```sh
-bun run db:new --name add_customers   # diff the schema into migrations/<ts>_add_customers/
+bun run db:new --name add_customers   # diff the schema into database/migrations/<ts>_add_customers/
 bun run db:new:custom --name seed     # empty migration for hand-written SQL
 
 bun run db:migrate:local              # apply locally
@@ -114,9 +114,10 @@ the remote database over the HTTP API and track their own
 wrangler maintains.
 
 Drizzle Kit writes one directory per migration
-(`migrations/<timestamp>_<name>/migration.sql`), which is why the D1 bindings
-set `migrations_pattern` instead of relying on wrangler's default
-`migrations/*.sql`.
+(`database/migrations/<timestamp>_<name>/migration.sql`), which is why the D1
+bindings set `migrations_pattern` instead of relying on wrangler's default
+`migrations/*.sql`. The snapshots Drizzle keeps next to each migration are
+excluded from Biome in `biome.json`.
 
 ### Querying
 

@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
+import { relations } from "./schema";
 
 /**
  * Drizzle client over the D1 binding, usable from any server module (loaders,
@@ -9,4 +10,4 @@ import { drizzle } from "drizzle-orm/d1";
  * and the Workers runtime forbids I/O outside a request, not property access.
  * The queries themselves still run inside the request.
  */
-export const db = drizzle(env.DB);
+export const db = drizzle(env.DB, { relations });

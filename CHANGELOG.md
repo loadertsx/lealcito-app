@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.2
+
+### Added
+
+- Add initial database models
+
 ## [0.0.1]
 
 ### Added

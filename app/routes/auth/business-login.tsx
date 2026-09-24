@@ -1,7 +1,7 @@
 import { Form, Link } from "react-router";
-import { assertSameOrigin, requestMagicLink } from "../services/auth.server";
-import { getBusinessHome } from "../services/business.server";
-import { sendMagicLink } from "../services/mailer.server";
+import { assertSameOrigin, requestMagicLink } from "../../services/auth.server";
+import { getBusinessHome } from "../../services/business.server";
+import { sendMagicLink } from "../../services/mailer.server";
 import type { Route } from "./+types/business-login";
 
 export function headers() {

@@ -1,6 +1,6 @@
 import { Link, redirect } from "react-router";
-import { getSessionUser } from "../services/auth.server";
-import { getCurrentBenefits } from "../services/business.server";
+import { getSessionUser } from "../../services/auth.server";
+import { getCurrentBenefits } from "../../services/business.server";
 import type { Route } from "./+types/business-benefits";
 
 export function headers() {

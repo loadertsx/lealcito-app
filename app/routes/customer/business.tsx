@@ -1,6 +1,6 @@
 import { Form, Link } from "react-router";
-import { getSessionUser } from "../services/auth.server";
-import { getBusinessHome } from "../services/business.server";
+import { getSessionUser } from "../../services/auth.server";
+import { getBusinessHome } from "../../services/business.server";
 import type { Route } from "./+types/business";
 
 export function headers() {
@@ -60,14 +60,14 @@ export default function Business({ loaderData }: Route.ComponentProps) {
 			)}
 			{business.staffRole && (
 				<p>
-					<Link to={`/b/${encodeURIComponent(business.slug)}/staff`}>
+					<Link to={`/admin/b/${encodeURIComponent(business.slug)}/staff`}>
 						Espacio del personal
 					</Link>
 				</p>
 			)}
 			{business.staffRole === "admin" && (
 				<p>
-					<Link to={`/b/${encodeURIComponent(business.slug)}/manage`}>
+					<Link to={`/admin/b/${encodeURIComponent(business.slug)}/manage`}>
 						Administrar negocio
 					</Link>
 				</p>

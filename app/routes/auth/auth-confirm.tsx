@@ -3,8 +3,8 @@ import {
 	assertSameOrigin,
 	confirmMagicLink,
 	inspectMagicLink,
-} from "../services/auth.server";
-import { getBusinessHome } from "../services/business.server";
+} from "../../services/auth.server";
+import { getBusinessHome } from "../../services/business.server";
 import type { Route } from "./+types/auth-confirm";
 
 // In particular, do not send the URL's token to third-party assets via Referer.

@@ -24,8 +24,8 @@ Owner assignment (`business_staff.role = admin`) remains manual. Anyone can veri
 ## Per-business private access
 
 - `/b/:slug/benefits` requires a session and an **active** `business_memberships` row for that user and business. It reads only that customer's granted benefits for the current instant (`period_start <= now < period_end`); a suspended membership or an entry alone is insufficient.
-- `/b/:slug/staff` requires `business_staff.role` to be `staff` or `admin` for that business.
-- `/b/:slug/manage` requires `business_staff.role = admin` for that business. Being staff or an owner does not automatically grant customer benefits.
+- `/admin/b/:slug/staff` requires `business_staff.role` to be `staff` or `admin` for that business.
+- `/admin/b/:slug/manage` requires `business_staff.role = admin` for that business. Being staff or an owner does not automatically grant customer benefits.
 
 These routes read current permissions from D1 on every request, even if a browser already shows a link. The staff and owner pages are minimal authorization checks; they do not yet implement redemptions or business configuration. Unknown businesses return 404, and unauthorized access returns 403. Logging out revokes access to all three routes.
 
@@ -33,7 +33,7 @@ These routes read current permissions from D1 on every request, even if a browse
 
 1. Run `bun run db:status:local`; apply pending migrations locally only.
 2. Create two test businesses in local D1 and visit `/b/<slug>` using `bun --bun run dev` (or `bun --bun run build && bun --bun run preview`). Without a session, “Enter” redirects to the email form.
-3. Test the email form with Resend configured for your own email address; open the link and confirm sign-in. Return to the business, register entry, and check that the page shows the no-membership state; the second business should still prompt the user to enter. Verify that repeating the POST does not create another entry and that logging out deletes the session, not the entries. With local fixtures, check that active customers see only their own current benefits in their business, suspended customers cannot access benefits, staff cannot access `/manage`, and changing the slug denies access outside one's assigned business.
+3. Test the email form with Resend configured for your own email address; open the link and confirm sign-in. Return to the business, register entry, and check that the page shows the no-membership state; the second business should still prompt the user to enter. Verify that repeating the POST does not create another entry and that logging out deletes the session, not the entries. With local fixtures, check that active customers see only their own current benefits in their business, suspended customers cannot access benefits, staff cannot access `/admin/b/:slug/manage`, and changing the slug denies access outside one's assigned business.
 4. Run `bun test tests/auth-token.test.ts tests/business-entry.test.ts`, `bun --bun run typecheck`, and `bun --bun run build`. The `bun run typecheck` script may fail before TypeScript runs if `react-router typegen` uses Node earlier than 22.22; with this installation, it works when run through Bun.
 
 Per-email-address protection is the initial limit; **there is no IP-based protection yet**, nor an email retry queue. Additional edge-level protection (Cloudflare) will be needed before publicly enabling a large volume of requests.

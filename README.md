@@ -119,6 +119,32 @@ bindings set `migrations_pattern` instead of relying on wrangler's default
 `migrations/*.sql`. The snapshots Drizzle keeps next to each migration are
 excluded from Biome in `biome.json`.
 
+### Drizzle Studio
+
+```sh
+bun run db:migrate:local # initialize/update local D1 first
+bun run db:studio        # alias: bun run db:studio:local
+```
+
+Open https://local.drizzle.studio after the command starts. Local Studio discovers
+Wrangler's SQLite file, excludes `metadata.sqlite`, and refuses to start if more
+than one database exists rather than opening the wrong one.
+
+For staging, provide your Cloudflare account ID and an API token with **Account >
+D1 > Edit** permission (Read is sufficient for read-only access), scoped to the
+staging account. `wrangler login` alone is not enough for Drizzle's HTTP driver.
+
+```sh
+export CLOUDFLARE_ACCOUNT_ID="your-account-id"
+export CLOUDFLARE_API_TOKEN="your-api-token"
+bun run db:studio:stg
+```
+
+Staging's database ID is read from `env.stg` in `wrangler.jsonc`. Studio edits
+**real staging data**, not a local copy. Keep tokens out of version control.
+Stop local Studio before starting staging Studio (they use the same default port).
+These configs are for Studio only; continue applying migrations with Wrangler.
+
 ### Querying
 
 `database/client.ts` exports a ready-to-use client, available from any server

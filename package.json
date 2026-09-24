@@ -18,6 +18,9 @@
 		"check:types": "tsc",
 		"check:quality": "biome check .",
 		"check:quality:fix": "biome check . --write --unsafe",
+		"db:studio": "drizzle-kit studio --config drizzle.studio.local.config.ts",
+		"db:studio:local": "bun run db:studio",
+		"db:studio:stg": "drizzle-kit studio --config drizzle.studio.stg.config.ts",
 		"db:new": "drizzle-kit generate",
 		"db:new:custom": "drizzle-kit generate --custom",
 		"db:migrate:local": "wrangler d1 migrations apply DB --local",
@@ -40,6 +43,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.5.14",
 		"@cloudflare/vite-plugin": "^1.56.0",
+		"@libsql/client": "^0.18.0",
 		"@react-router/dev": "^8.3.1",
 		"@tailwindcss/vite": "^4.2.2",
 		"@types/node": "^26.6.2",

@@ -1,62 +1,65 @@
-# Especificación del modelo de datos de loyalty
+# Loyalty data model specification
 
-Estado: propuesta acordada a nivel conceptual; pendiente de implementación y de las decisiones indicadas al final.
+Status: initial schema, magic links, per-business entry, customer benefit reads, and staff/owner route checks implemented; private mutations and the decisions listed at the end are still pending.
 
-## 1. Alcance
+## 1. Scope
 
-La plataforma permite que una persona cree y administre un negocio. Cada negocio vive inicialmente bajo `/b/:slug` y configura hasta tres tipos de membresía, con sus respectivos beneficios.
+The platform allows a person to create and manage a business. Each business initially lives under `/b/:slug` and configures up to three membership types, with their respective benefits.
 
-Los clientes tienen una única cuenta en la plataforma, pero su acceso y sus beneficios son independientes por negocio. Tener una cuenta o una sesión no otorga acceso automático a todos los negocios.
+Customers have a single account on the platform, but their voluntary entry and benefits are independent for each business. Having an account or a session does not automatically grant access to every business's private data. A business's public presentation can be viewed without a session.
 
-Los beneficios se renuevan mensualmente. El admin o staff del negocio puede marcar como utilizado un beneficio otorgado a un cliente.
+Benefits renew monthly. The business admin or staff can mark a benefit granted to a customer as used.
 
-La autenticación utiliza magic links enviados mediante Resend y sesiones almacenadas en la base de datos.
+Authentication uses magic links sent through Resend and sessions stored in the database.
 
-## 2. Vocabulario y responsabilidades
+## 2. Vocabulary and responsibilities
 
-| Tabla | Responsabilidad |
+| Table | Responsibility |
 |---|---|
-| `users` | Identidad única de cada persona. No contiene un rol global. |
-| `businesses` | Negocio, slug público y zona horaria. |
-| `business_staff` | Relación administrativa o laboral de una persona con un negocio. |
-| `memberships` | Tipos de membresía que ofrece un negocio: nombre y descripción. Máximo tres por negocio. |
-| `benefits` | Definiciones de los beneficios incluidos en un tipo de membresía. |
-| `business_memberships` | Relación de un cliente con un negocio y tipo de membresía asignado. |
-| `membership_benefits` | Beneficios concretos otorgados al cliente para un período, incluyendo su estado de canje. |
-| `sessions` | Sesiones autenticadas persistidas. |
-| `magic_link_requests` | Solicitudes de acceso por email, pendientes, consumidas o expiradas. |
+| `users` | Each person's unique identity. Does not contain a global role. |
+| `businesses` | Business, public slug, and time zone. |
+| `business_staff` | A person's administrative or employment relationship with a business. |
+| `business_customers` | A person's voluntary entry into a business; grants no membership or permissions. |
+| `memberships` | Membership types offered by a business: name and description. Maximum of three per business. |
+| `benefits` | Definitions of the benefits included in a membership type. |
+| `business_memberships` | A customer's relationship with a business and assigned membership type. |
+| `membership_benefits` | Specific benefits granted to a customer for a period, including their redemption status. |
+| `sessions` | Persisted authenticated sessions. |
+| `magic_link_requests` | Email sign-in requests, pending, consumed, or expired. |
 
-### Distinción central
+### Core distinction
 
-`memberships` define una oferta del negocio, no una asignación a un usuario. Por eso no contiene `user_id`.
+`memberships` defines a business offering, not an assignment to a user. This is why it does not contain `user_id`.
 
-Ejemplo:
+Example:
 
-- `memberships`: Oro de Cafetería Pepe, con su descripción.
-- `benefits`: un café gratis incluido en Oro.
-- `business_memberships`: Juan es cliente de Cafetería Pepe y tiene Oro.
-- `membership_benefits`: el café de febrero otorgado a Juan, disponible o canjeado.
+- `memberships`: Gold at Pepe's Coffee Shop, with its description.
+- `benefits`: a free coffee included in Gold.
+- `business_memberships`: Juan is a customer of Pepe's Coffee Shop and has Gold.
+- `membership_benefits`: the February coffee granted to Juan, available or redeemed.
 
-Plata, oro y platino/diamante son nombres iniciales de ejemplo. El modelo permite nombres configurables; no son un enum global.
+Silver, gold, and platinum/diamond are initial example names. The model allows configurable names; they are not a global enum.
 
-## 3. Diagrama de entidades
+## 3. Entity diagram
 
 ```mermaid
 erDiagram
-    users ||--o{ sessions : tiene
-    users ||--o{ business_staff : integra
-    businesses ||--o{ business_staff : tiene
+    users ||--o{ sessions : has
+    users ||--o{ business_staff : belongs_to
+    businesses ||--o{ business_staff : has
+    users ||--o{ business_customers : enters
+    businesses ||--o{ business_customers : receives
 
-    businesses ||--o{ memberships : ofrece
-    memberships ||--o{ benefits : incluye
+    businesses ||--o{ memberships : offers
+    memberships ||--o{ benefits : includes
 
-    users ||--o{ business_memberships : tiene
-    businesses ||--o{ business_memberships : tiene
-    memberships ||--o{ business_memberships : asignada_a
+    users ||--o{ business_memberships : has
+    businesses ||--o{ business_memberships : has
+    memberships ||--o{ business_memberships : assigned_to
 
-    business_memberships ||--o{ membership_benefits : recibe
-    benefits ||--o{ membership_benefits : origina
-    users o|--o{ membership_benefits : registra_canje
+    business_memberships ||--o{ membership_benefits : receives
+    benefits ||--o{ membership_benefits : originates
+    users o|--o{ membership_benefits : records_redemption
 
     users {
         uuid id PK
@@ -79,6 +82,12 @@ erDiagram
         uuid business_id FK
         string role "admin | staff"
         timestamp created_at
+    }
+
+    business_customers {
+        uuid user_id PK,FK
+        uuid business_id PK,FK
+        timestamp entered_at
     }
 
     memberships {
@@ -111,8 +120,8 @@ erDiagram
         uuid id PK
         uuid business_membership_id FK
         uuid benefit_id FK
-        string title "copia al otorgar"
-        string description "copia al otorgar"
+        string title "snapshot at grant time"
+        string description "snapshot at grant time"
         timestamp period_start
         timestamp period_end
         timestamp redeemed_at "nullable"
@@ -139,106 +148,108 @@ erDiagram
     }
 ```
 
-Los tipos del diagrama son conceptuales, no una migración SQL. Los instantes deben almacenarse con una representación inequívoca de zona horaria, por ejemplo `timestamptz` en PostgreSQL.
+The diagram's types are conceptual, not a SQL migration. Instants must be stored using an unambiguous time zone representation, such as `timestamptz` in PostgreSQL.
 
-`magic_link_requests` es independiente: una solicitud puede existir antes de crear el usuario o una sesión. Su `business_slug` es contexto de navegación, no una clave de autorización.
+`magic_link_requests` is independent: a request can exist before a user or session is created. Its `business_slug` is navigation context, not an authorization key.
 
-## 4. Identidad, roles y acceso
+## 4. Identity, roles, and access
 
-### Usuarios
+### Users
 
-- Una persona mantiene una única cuenta entre negocios.
-- El email es único bajo una política consistente de normalización.
-- La sesión identifica al usuario, no su rol ni su membresía en un negocio.
+- A person maintains a single account across businesses.
+- Email is unique under a consistent normalization policy.
+- The session identifies the user, not their role or membership in a business.
 
-### Admin y staff
+### Admin and staff
 
-`business_staff.role` admite `admin` o `staff`. El rol pertenece a la relación con un negocio, no a `users`.
+`business_staff.role` accepts `admin` or `staff`. The role belongs to the relationship with a business, not to `users`.
 
-Una persona puede administrar un negocio, trabajar en otro y ser cliente de un tercero. También puede ser staff y cliente del mismo negocio.
+A person can manage one business, work at another, and be a customer of a third. They can also be both staff and a customer of the same business. The staff/admin role works without requiring a row in `business_customers`; they can also enter as customers if they wish.
 
-Al crear un negocio, su creador recibe una relación `business_staff` con rol `admin`. Ambas creaciones deben ser atómicas.
+When a business is created, its creator receives a `business_staff` relationship with the `admin` role. Both creations must be atomic.
 
-La configuración del negocio y sus membresías corresponde al admin. Admin y staff pueden registrar canjes. Los demás permisos detallados quedan pendientes de definición.
+The admin is responsible for configuring the business and its memberships. Admin and staff can record redemptions. Other detailed permissions remain to be defined.
 
-### Clientes
+### Customers
 
-Un cliente se representa mediante `business_memberships`, con un único tipo de membresía asignado por negocio. El estado inicial propuesto admite `active` y `suspended`.
+`business_customers` records that an authenticated user clicked “Enter” at a business. The insertion is idempotent per user and business; it does not grant benefits, administrative permissions, or a membership. Someone can have this row without having obtained a membership. Businesses can be previewed without creating this row.
 
-La autenticación no debe crear o reactivar una relación con un negocio sin aplicar la política de admisión que se defina.
+An obtained membership is represented by `business_memberships`, with a single membership type assigned per business. Its statuses are `active` and `suspended`. If a membership already exists, the person is also considered to have entered (including records predating `business_customers`).
 
-### Aislamiento entre negocios
+Authentication must not create or reactivate a membership without applying the admission policy that is eventually defined.
 
-- El slug es único y normalizado; las relaciones persistentes usan IDs.
-- En cada operación protegida, el servidor verifica el usuario, el negocio y la relación que autoriza el acceso.
-- Conocer un ID o modificar el slug de la URL no concede acceso.
-- El cliente consulta sus propios beneficios dentro del negocio autorizado.
-- El staff solo opera sobre clientes y beneficios de negocios donde tiene permiso.
-- `redeemed_by` se obtiene del usuario autenticado que registra el canje, no de un valor confiado al frontend.
+### Isolation between businesses
 
-## 5. Membresías y beneficios configurables
+- The slug is unique and normalized; persistent relationships use IDs.
+- For every protected operation, the server checks the user, the business, and the relationship that authorizes access.
+- Knowing an ID or modifying the URL slug does not grant access.
+- Customers with an active membership query only their own currently granted benefits within the authorized business; suspended memberships are denied access to this view.
+- Staff only operate on customers and benefits of businesses where they have permission.
+- `redeemed_by` is obtained from the authenticated user recording the redemption, not from a value trusted to the frontend.
 
-Cada negocio puede crear como máximo tres filas en `memberships`. Este límite no restringe la cantidad de clientes ni de filas en `business_memberships`.
+## 5. Configurable memberships and benefits
 
-Cada membresía expone nombre, descripción y una colección de beneficios en `benefits`.
+Each business can create at most three rows in `memberships`. This limit does not restrict the number of customers or rows in `business_memberships`.
 
-Los beneficios tienen título y descripción libres. La elegibilidad, el período y el estado de canje son datos estructurados, no reglas inferidas del texto.
+Each membership exposes a name, description, and collection of benefits in `benefits`.
 
-El modelo actual supone:
+Benefits have free-form titles and descriptions. Eligibility, period, and redemption status are structured data, not rules inferred from the text.
 
-- Cada definición de beneficio pertenece a un solo tipo de membresía.
-- Cada beneficio otorgado se puede utilizar una vez durante su período mensual.
-- No hay herencia automática de beneficios entre tipos de membresía.
-- `benefits.active` controla su disponibilidad para nuevos otorgamientos. Desactivarlo no elimina beneficios ya otorgados ni su historial.
+The current model assumes:
 
-## 6. Beneficios mensuales e historial
+- Each benefit definition belongs to a single membership type.
+- Each granted benefit can be used once during its monthly period.
+- There is no automatic benefit inheritance between membership types.
+- `benefits.active` controls availability for new grants. Deactivating it does not delete previously granted benefits or their history.
 
-Cada fila de `membership_benefits` significa:
+## 6. Monthly benefits and history
 
-> A este cliente, en este negocio, le corresponde este beneficio durante este período.
+Each row in `membership_benefits` means:
 
-El registro contiene una copia de `title` y `description` tomada de `benefits` al otorgarlo. Modificar la definición posteriormente no reescribe lo que el cliente recibió o utilizó.
+> This customer, at this business, is entitled to this benefit during this period.
 
-### Estados derivados
+The record contains a copy of `title` and `description` taken from `benefits` at grant time. Editing the definition later does not rewrite what the customer received or used.
 
-No se necesita una columna adicional de estado:
+### Derived statuses
 
-| Condición | Estado |
+No additional status column is needed:
+
+| Condition | Status |
 |---|---|
-| `redeemed_at` tiene valor | Utilizado |
-| Sin canje y el instante actual es anterior a `period_start` | Próximo |
-| Sin canje y el instante actual es igual o posterior a `period_end` | Vencido |
-| Sin canje y dentro del período | Disponible |
+| `redeemed_at` has a value | Used |
+| Not redeemed and the current instant is before `period_start` | Upcoming |
+| Not redeemed and the current instant is at or after `period_end` | Expired |
+| Not redeemed and within the period | Available |
 
-El período usa el intervalo `[period_start, period_end)`: incluye su inicio y excluye su fin.
+The period uses the interval `[period_start, period_end)`: inclusive of its start and exclusive of its end.
 
-### Renovación
+### Renewal
 
-Cada mes se crean nuevos registros. No se borran ni se destachan los registros anteriores.
+New records are created each month. Previous records are neither deleted nor reset to unused.
 
-Ejemplo:
+Example:
 
-| Cliente | Beneficio | Período | Canje |
+| Customer | Benefit | Period | Redemption |
 |---|---|---|---|
-| Juan | Café gratis | Enero | Utilizado el 15/01 |
-| Juan | Descuento del 20% | Enero | Sin utilizar |
-| Juan | Café gratis | Febrero | Disponible durante febrero |
+| Juan | Free coffee | January | Used on January 15 |
+| Juan | 20% discount | January | Unused |
+| Juan | Free coffee | February | Available during February |
 
-El otorgamiento debe ser idempotente: ejecutarlo otra vez para el mismo beneficio, cliente y período no crea duplicados.
+Granting must be idempotent: running it again for the same benefit, customer, and period does not create duplicates.
 
-La estrategia de generación queda pendiente: puede ser anticipada mediante un proceso programado o bajo demanda al acceder. En ambos casos, la disponibilidad se determina por las fechas del período.
+The generation strategy remains undecided: it may run in advance through a scheduled process or on demand when accessed. In both cases, availability is determined by the period dates.
 
-### Canje
+### Redemption
 
-Al registrar un canje se guardan juntos `redeemed_at` y `redeemed_by`.
+When recording a redemption, `redeemed_at` and `redeemed_by` are saved together.
 
-La operación debe verificar permisos, membresía habilitada, período vigente y ausencia de un canje previo. Debe ser atómica para que dos empleados no puedan consumir el mismo beneficio simultáneamente.
+The operation must check permissions, an enabled membership, a valid period, and the absence of a previous redemption. It must be atomic so that two employees cannot consume the same benefit simultaneously.
 
-`membership_benefits` conserva beneficios disponibles e historial de períodos y canjes. No es una auditoría de todas las modificaciones. Deshacer un canje y registrar sus eventos queda fuera del alcance inicial.
+`membership_benefits` retains available benefits and the history of periods and redemptions. It is not an audit log of every change. Undoing a redemption and recording its events are outside the initial scope.
 
-## 7. Restricciones de integridad
+## 7. Integrity constraints
 
-### Unicidad
+### Uniqueness
 
 ```text
 users:
@@ -249,6 +260,9 @@ businesses:
 
 business_staff:
   UNIQUE(user_id, business_id)
+
+business_customers:
+  PRIMARY KEY(user_id, business_id)
 
 business_memberships:
   UNIQUE(user_id, business_id)
@@ -263,56 +277,57 @@ magic_link_requests:
   UNIQUE(token_hash)
 ```
 
-### Consistencia
+### Consistency
 
-- Todas las referencias indicadas como FK deben tener integridad referencial.
-- La membresía seleccionada en `business_memberships.membership_id` debe pertenecer a su `business_id`. Puede garantizarse con una FK compuesta y la clave única correspondiente.
-- El beneficio otorgado debe pertenecer al mismo negocio y ser elegible para el tipo de membresía del cliente al momento del otorgamiento.
-- Un cambio posterior de tipo no debe invalidar las referencias del historial a beneficios anteriores.
-- `period_start` debe ser menor que `period_end`.
-- `redeemed_at` y `redeemed_by` deben estar ambos vacíos o ambos completos.
-- Los valores admitidos de roles y estados deben restringirse también en la base de datos.
-- No se deben usar borrados en cascada que destruyan accidentalmente el historial de beneficios o canjes. La política completa de eliminación y anonimización queda pendiente.
+- All references marked as FK must have referential integrity.
+- The membership selected in `business_memberships.membership_id` must belong to its `business_id`. This can be enforced with a composite FK and the corresponding unique key.
+- The granted benefit must belong to the same business and be eligible for the customer's membership type at grant time.
+- A later type change must not invalidate historical references to previous benefits.
+- `period_start` must be less than `period_end`.
+- `redeemed_at` and `redeemed_by` must either both be empty or both be populated.
+- Allowed role and status values must also be constrained in the database.
+- Do not use cascading deletes that could accidentally destroy benefit or redemption history. The full deletion and anonymization policy remains undecided.
 
-### Límite de tres membresías
+### Three-membership limit
 
-Una comprobación aislada de cantidad no es suficiente ante solicitudes simultáneas.
+An isolated count check is not sufficient under concurrent requests.
 
-La creación debe hacerse en una transacción que bloquee la fila del negocio, cuente sus membresías y solo inserte si hay menos de tres. Todos los caminos de creación deben seguir esa misma operación.
+Creation must happen in a transaction that locks the business row, counts its memberships, and only inserts if there are fewer than three. All creation paths must follow the same operation.
 
-## 8. Autenticación
+## 8. Authentication
 
-### Flujo
+### Flow
 
 ```text
-Persona entra a /b/:slug
-  → Ingresa su email
-  → Se crea una solicitud de magic link
-  → Resend envía el enlace
-  → La persona confirma el enlace
-  → El servidor valida y consume el token una sola vez
-  → Obtiene o crea el usuario
-  → Crea una sesión en la base de datos
-  → Establece la cookie de sesión
-  → Regresa al negocio de origen
-  → Verifica membresía o permisos de staff
+Person previews /b/:slug
+  → Clicks “Enter”; if not signed in, enters their email
+  → A magic link request is created
+  → Resend sends the link
+  → The person confirms the link with POST
+  → The server validates and consumes the token exactly once
+  → Retrieves or creates the user
+  → Creates a session in the database
+  → Sets the session cookie
+  → Returns to the original business and clicks “Enter” if they have not already done so
+  → A business_customers record is created; no membership is granted
+  → Each private operation checks membership or staff permissions per business
 ```
 
-### Requisitos
+### Requirements
 
-- Los tokens son aleatorios y se almacenan como hashes, no en texto plano.
-- Los magic links tienen expiración corta y uso único; su consumo debe ser atómico.
-- Las sesiones tienen expiración y pueden revocarse en la base de datos.
-- La cookie de sesión utiliza `HttpOnly` y `Secure` en producción, con una política `SameSite` apropiada al flujo.
-- El envío de enlaces requiere límites de frecuencia para prevenir abuso.
-- El negocio de regreso se valida y resuelve internamente; no se acepta una redirección arbitraria.
-- Resend entrega el email. La aplicación controla identidad, tokens, sesiones y autorización.
+- Tokens are random and stored as hashes, not plaintext.
+- Magic links have a short expiration and are single-use; consuming them must be atomic.
+- Sessions expire and can be revoked in the database.
+- The session cookie uses `HttpOnly` and `Secure` in production, with a `SameSite` policy appropriate to the flow.
+- Sending links requires rate limits to prevent abuse.
+- The return business is validated and resolved internally; arbitrary redirects are not accepted.
+- Resend delivers the email. The application controls identity, tokens, sessions, and authorization.
 
-## 9. Consulta de beneficios del período actual
+## 9. Querying benefits for the current period
 
-Primero, el servidor obtiene el usuario desde la sesión y busca su `business_memberships` en el negocio solicitado. Solo después de comprobar que puede acceder utiliza ese ID para consultar sus beneficios.
+First, the server obtains the user from the session and looks up their `business_memberships` record in the requested business. Only after verifying access does it use that ID to query their benefits.
 
-Ejemplo SQL para PostgreSQL:
+SQL example for PostgreSQL:
 
 ```sql
 SELECT
@@ -327,30 +342,30 @@ WHERE business_membership_id = $1
 ORDER BY title, id;
 ```
 
-`$1` es el ID de la relación cliente-negocio previamente autorizada, no un ID aceptado del frontend sin validación.
+`$1` is the ID of the previously authorized customer-business relationship, not an ID accepted from the frontend without validation.
 
-La pantalla muestra:
+The screen displays:
 
-- `redeemed_at` vacío: disponible.
-- `redeemed_at` con fecha: utilizado.
+- Empty `redeemed_at`: available.
+- `redeemed_at` with a date: used.
 
-Esta consulta supone que los beneficios del período ya fueron otorgados. Para consultar el historial se conservan los mismos filtros de autorización y se amplía el rango de períodos.
+This query assumes that the period's benefits have already been granted. History queries retain the same authorization filters and expand the period range.
 
-## 10. Decisiones pendientes
+## 10. Pending decisions
 
-1. **Admisión de clientes:** quién crea la relación con el negocio y asigna su tipo de membresía.
-2. **Renovación mensual:** mes calendario según la zona horaria del negocio o aniversario de inscripción.
-3. **Cambio de membresía:** qué ocurre con beneficios otorgados y consumidos cuando el cliente cambia de tipo a mitad de período.
-4. **Generación mensual:** proceso programado, bajo demanda o una combinación.
-5. **Edición del catálogo durante un período:** si nuevos beneficios se otorgan inmediatamente o desde el siguiente período. Las copias ya otorgadas no se reescriben.
-6. **Suspensión y reactivación:** efecto sobre otorgamientos, vencimientos y beneficios existentes.
-7. **Permisos administrativos:** diferencias adicionales entre admin y staff, invitaciones y protección del último admin.
-8. **Eliminación y retención:** archivo de membresías, tratamiento de usuarios eliminados y conservación o anonimización del historial.
+1. **Customer admission:** who creates the relationship with the business and assigns its membership type.
+2. **Monthly renewal:** calendar month based on the business's time zone or enrollment anniversary.
+3. **Membership changes:** what happens to granted and consumed benefits when the customer changes type mid-period.
+4. **Monthly generation:** scheduled process, on demand, or a combination.
+5. **Catalog edits during a period:** whether new benefits are granted immediately or starting with the next period. Previously granted snapshots are not rewritten.
+6. **Suspension and reactivation:** effects on grants, expirations, and existing benefits.
+7. **Administrative permissions:** additional differences between admin and staff, invitations, and protection of the last admin.
+8. **Deletion and retention:** membership archival, handling of deleted users, and retention or anonymization of history.
 
-## 11. Fuera del alcance inicial
+## 11. Outside the initial scope
 
-- Puntos, sellos o reglas automáticas de acumulación.
-- Beneficios con múltiples usos dentro de un período.
-- Herencia automática entre tipos de membresía.
-- Auditoría de cada edición o reversión de canjes.
-- Identidades o credenciales diferentes para cada negocio.
+- Points, stamps, or automatic accrual rules.
+- Benefits with multiple uses within a period.
+- Automatic inheritance between membership types.
+- Auditing every edit or redemption reversal.
+- Separate identities or credentials for each business.

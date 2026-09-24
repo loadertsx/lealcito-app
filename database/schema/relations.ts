@@ -1,5 +1,6 @@
 import { defineRelations } from "drizzle-orm";
 import { magicLinkRequests, sessions, users } from "./auth";
+import { businessCustomers } from "./business-customers";
 import { businesses, businessStaff } from "./businesses";
 import { benefits, memberships } from "./catalog";
 import { businessMemberships, membershipBenefits } from "./loyalty";
@@ -10,6 +11,7 @@ const schema = {
 	magicLinkRequests,
 	businesses,
 	businessStaff,
+	businessCustomers,
 	memberships,
 	benefits,
 	businessMemberships,
@@ -20,6 +22,7 @@ export const relations = defineRelations(schema, (relation) => ({
 	users: {
 		sessions: relation.many.sessions(),
 		staffAssignments: relation.many.businessStaff(),
+		businessEntries: relation.many.businessCustomers(),
 		businessMemberships: relation.many.businessMemberships(),
 		redeemedMembershipBenefits: relation.many.membershipBenefits(),
 	},
@@ -32,6 +35,7 @@ export const relations = defineRelations(schema, (relation) => ({
 	},
 	businesses: {
 		staff: relation.many.businessStaff(),
+		customerEntries: relation.many.businessCustomers(),
 		memberships: relation.many.memberships(),
 		customerMemberships: relation.many.businessMemberships(),
 	},
@@ -43,6 +47,18 @@ export const relations = defineRelations(schema, (relation) => ({
 		}),
 		business: relation.one.businesses({
 			from: relation.businessStaff.businessId,
+			to: relation.businesses.id,
+			optional: false,
+		}),
+	},
+	businessCustomers: {
+		user: relation.one.users({
+			from: relation.businessCustomers.userId,
+			to: relation.users.id,
+			optional: false,
+		}),
+		business: relation.one.businesses({
+			from: relation.businessCustomers.businessId,
 			to: relation.businesses.id,
 			optional: false,
 		}),

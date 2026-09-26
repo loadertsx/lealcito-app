@@ -19,20 +19,22 @@ export const links: Route.LinksFunction = () => [
 	},
 	{
 		rel: "stylesheet",
-		href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+		href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400..800&family=Kalam&display=swap",
 	},
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="es-AR">
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
 			</head>
-			<body>
+			{/* Extensions (e.g. ColorZilla) add attributes to <body> before hydration.
+			    This only silences attribute mismatches on <body>, not its children. */}
+			<body suppressHydrationWarning>
 				{children}
 				<ScrollRestoration />
 				<Scripts />
@@ -46,15 +48,15 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-	let message = "Oops!";
-	let details = "An unexpected error occurred.";
+	let message = "Algo salió mal";
+	let details = "Ocurrió un error inesperado.";
 	let stack: string | undefined;
 
 	if (isRouteErrorResponse(error)) {
-		message = error.status === 404 ? "404" : "Error";
+		message = error.status === 404 ? "No encontramos esta página" : "Error";
 		details =
 			error.status === 404
-				? "The requested page could not be found."
+				? "Puede que el enlace esté mal escrito o que la página ya no exista."
 				: error.statusText || details;
 	} else if (import.meta.env.DEV && error && error instanceof Error) {
 		details = error.message;
@@ -62,11 +64,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 	}
 
 	return (
-		<main className="pt-16 p-4 container mx-auto">
-			<h1>{message}</h1>
-			<p>{details}</p>
+		<main className="mx-auto v-stack max-w-3xl gap-4 px-4 py-16">
+			<h1 className="font-bold text-4xl tracking-tight">{message}</h1>
+			<p className="text-ink-soft">{details}</p>
 			{stack && (
-				<pre className="w-full p-4 overflow-x-auto">
+				<pre className="w-full overflow-x-auto rounded-2xl bg-sand-100 p-4 text-sm">
 					<code>{stack}</code>
 				</pre>
 			)}

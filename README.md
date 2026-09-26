@@ -17,11 +17,11 @@ A modern, production-ready template for building full-stack React applications u
 The application uses package by feature: `app/routes` contains React Router
 adapters, `app/features` owns domain functionality and schemas, `app/core`
 contains infrastructure, and `app/shared` is reserved for reusable domain-neutral
-code. Authentication, businesses, and loyalty each have `components/`,
-`schema.ts`, `queries.server.ts`, and `mutations.server.ts`. The home template
-lives beside its route in `app/routes/customer/components/welcome/`.
+code. Authentication, businesses, loyalty, and the landing page each have
+`components/`, `schema.ts`, `queries.server.ts`, and `mutations.server.ts`.
 
-See [architecture and dependency rules](docs/architecture.md).
+See [architecture and dependency rules](docs/architecture.md) and the
+[style guide](docs/style-guide.md) for building components.
 
 ### Checks
 
@@ -33,9 +33,7 @@ bun run check:quality
 bun --bun run rr:routes
 ```
 
-The structural migration preserves public URLs and database definitions; it does
-not require new SQL migrations. The existing Biome issues in the template CSS,
-home route, and welcome SVGs remain outside this refactor's scope.
+The landing page's early-access form emails leads to `LEADS_TO` through Resend.
 
 ## Getting Started
 

@@ -1,18 +1,27 @@
-import { env } from "cloudflare:workers";
+import { assertSameOrigin } from "../../core/security.server";
+import { LandingPage } from "../../features/landing/components/landing-page";
+import { submitLead } from "../../features/landing/mutations.server";
 import type { Route } from "./+types/home";
-import { Welcome } from "./components/welcome/welcome";
 
-export function meta({}: Route.MetaArgs) {
+const title = "Lealcito · Membresías para tus clientes de siempre";
+const description =
+	"Armá hasta tres membresías con beneficios que se renuevan cada mes. Tus clientes se suman con su email y tu equipo canjea con un toque.";
+
+export function meta(_: Route.MetaArgs) {
 	return [
-		{ title: "New React Router App" },
-		{ name: "description", content: "Welcome to React Router!" },
+		{ title },
+		{ name: "description", content: description },
+		{ property: "og:title", content: title },
+		{ property: "og:description", content: description },
+		{ property: "og:type", content: "website" },
 	];
 }
 
-export function loader() {
-	return { message: env.VALUE_FROM_CLOUDFLARE };
+export async function action({ request }: Route.ActionArgs) {
+	assertSameOrigin(request);
+	return submitLead(await request.formData());
 }
 
-export default function Home({ loaderData }: Route.ComponentProps) {
-	return <Welcome message={loaderData.message} />;
+export default function Home() {
+	return <LandingPage />;
 }

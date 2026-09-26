@@ -1,15 +1,298 @@
 @import "tailwindcss" source(".");
 
+/*
+ * Design tokens. See docs/style-guide.md before adding or changing any of them.
+ * The palette is light-only on purpose: Lealcito talks to business owners.
+ */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--font-sans:
+		"Figtree", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+		"Segoe UI Emoji";
+	--font-hand: "Kalam", "Comic Sans MS", cursive;
+
+	/* Neutrals: warm sand, never pure grey */
+	--color-ink: #17181c;
+	--color-ink-soft: #3f3d38;
+	--color-muted: #6a655c;
+	--color-faint: #a39e94;
+	--color-paper: #f8f7f3;
+	--color-sand-100: #f1efea;
+	--color-sand-200: #e5e2da;
+
+	/* Brand: sage green */
+	--color-brand-50: #ecf5ef;
+	--color-brand-100: #d3e8d9;
+	--color-brand-400: #7dad8b;
+	--color-brand-500: #578c6b;
+	--color-brand-600: #3d7252;
+	--color-brand-700: #2e6045;
+
+	/* Supporting surfaces */
+	--color-olive: #edf0d9;
+	--color-butter: #f6e8a6;
+
+	/* Membership tiers */
+	--color-silver-soft: #edeff1;
+	--color-silver-ink: #4a5057;
+	--color-gold-soft: #f5ebc8;
+	--color-gold-ink: #7a5b12;
+
+	/* People and states */
+	--color-staff-soft: #eaddfb;
+	--color-staff-ink: #593d7a;
+	--color-rose-soft: #fbe1e4;
+	--color-rose-ink: #9b2c44;
+	--color-danger-soft: #fbeae7;
+	--color-danger: #b93a2e;
+
+	/* Phone mockup hardware */
+	--color-metal-light: #ececee;
+	--color-metal: #a3a5aa;
+	--color-metal-soft: #d3d4d7;
+	--color-bezel: #0c0c0d;
+
+	--ease-out-soft: cubic-bezier(0.22, 0.8, 0.24, 1);
+	--ease-bounce: cubic-bezier(0.3, 1.6, 0.5, 1);
+
+	--animate-highlight: highlight 0.9s 0.4s var(--ease-out-soft) both;
+	--animate-draw: draw 0.9s 0.3s ease-out both;
+	--animate-marquee: marquee 60s linear infinite;
+	--animate-marquee-reverse: marquee-reverse 70s linear infinite;
+	--animate-pop: pop 0.45s var(--ease-bounce);
+	--animate-shake: shake 0.4s;
+	--animate-value-in: value-in 0.5s var(--ease-out-soft);
+	--animate-blink: blink 1s steps(1) infinite;
+	--animate-flash: flash 0.8s ease-out;
+
+	@keyframes highlight {
+		from {
+			background-size: 0% 100%;
+		}
+	}
+	@keyframes draw {
+		from {
+			stroke-dashoffset: 120;
+		}
+	}
+	@keyframes marquee {
+		to {
+			transform: translateX(-50%);
+		}
+	}
+	@keyframes marquee-reverse {
+		from {
+			transform: translateX(-50%);
+		}
+		to {
+			transform: translateX(0);
+		}
+	}
+	@keyframes pop {
+		from {
+			transform: scale(0);
+		}
+	}
+	@keyframes shake {
+		20%,
+		60% {
+			transform: translateX(-4px);
+		}
+		40%,
+		80% {
+			transform: translateX(4px);
+		}
+	}
+	@keyframes value-in {
+		from {
+			opacity: 0;
+			transform: translateY(0.25em);
+		}
+	}
+	@keyframes blink {
+		50% {
+			opacity: 0;
+		}
+	}
+	@keyframes flash {
+		from {
+			background-color: var(--color-butter);
+		}
+	}
 }
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+/* ---------- Layout primitives ---------- */
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+@utility v-stack {
+	display: flex;
+	flex-direction: column;
+}
+
+@utility v-stack-reverse {
+	display: flex;
+	flex-direction: column-reverse;
+}
+
+@utility h-stack {
+	display: flex;
+	flex-direction: row;
+}
+
+@utility h-stack-reverse {
+	display: flex;
+	flex-direction: row-reverse;
+}
+
+@utility z-stack {
+	display: grid;
+	align-items: center;
+	justify-items: center;
+
+	& > * {
+		grid-area: 1 / 1 / 1 / 2;
+	}
+}
+
+@utility center {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+@utility spacer {
+	flex: 1 1 auto;
+}
+
+@utility circle {
+	aspect-ratio: 1 / 1;
+	border-radius: 9999px;
+	flex-shrink: 0;
+}
+
+/* ---------- Affordances ---------- */
+
+@utility ui-button {
+	:where(&) {
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5;
+		@apply text-base font-semibold text-white;
+		@apply bg-linear-to-b from-brand-500 to-brand-600;
+		@apply shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_6px_16px_-8px_var(--color-brand-700)];
+		@apply transition duration-150 ease-out-soft;
+
+		@variant hover {
+			@apply brightness-105;
+		}
+
+		@variant active {
+			@apply scale-97;
+		}
+
+		@variant focus-visible {
+			@apply outline-2 outline-offset-3 outline-brand-600;
+		}
+
+		@variant disabled {
+			@apply cursor-not-allowed opacity-60;
+		}
+	}
+}
+
+@utility ui-button-soft {
+	:where(&) {
+		@apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5;
+		@apply bg-white text-base font-semibold text-ink;
+		@apply shadow-[inset_0_0_0_1px_var(--color-sand-200),0_2px_6px_-3px_rgb(0_0_0/0.1)];
+		@apply transition duration-150 ease-out-soft;
+
+		@variant hover {
+			@apply shadow-[inset_0_0_0_1px_var(--color-faint)];
+		}
+
+		@variant active {
+			@apply scale-97;
+		}
+
+		@variant focus-visible {
+			@apply outline-2 outline-offset-3 outline-brand-600;
+		}
+	}
+}
+
+@utility ui-input {
+	:where(&) {
+		@apply block w-full rounded-2xl border-[1.5px] border-brand-100 bg-white px-4 py-3;
+		@apply text-base text-ink placeholder:text-faint;
+
+		@variant focus-visible {
+			@apply border-brand-600 outline-none ring-3 ring-brand-100;
+		}
+
+		@variant aria-invalid {
+			@apply border-danger;
+		}
+	}
+}
+
+@utility ui-chip {
+	:where(&) {
+		@apply inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold;
+	}
+}
+
+@utility ui-kicker {
+	:where(&) {
+		@apply h-stack items-center gap-2 text-sm font-semibold uppercase tracking-widest text-muted;
+
+		&::before {
+			@apply size-2 rounded-full bg-brand-600;
+			content: "";
+		}
+	}
+}
+
+/* Marker-pen highlight behind a word. */
+@utility ui-mark {
+	:where(&) {
+		@apply -mx-[0.08em] px-[0.08em] animate-highlight bg-no-repeat;
+		background-image: linear-gradient(
+			transparent 60%,
+			var(--color-butter) 60%,
+			var(--color-butter) 92%,
+			transparent 92%
+		);
+		background-size: 100% 100%;
+	}
+}
+
+/* Inline SVG icon drawn with the sprite in features/landing/components/icons. */
+@utility ui-icon {
+	:where(&) {
+		@apply size-5.5 shrink-0 fill-none stroke-current;
+		stroke-width: 1.6;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+}
+
+@layer base {
+	html {
+		@apply scroll-smooth bg-white text-ink antialiased;
+		color-scheme: light;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html {
+			@apply scroll-auto;
+		}
+
+		/* Overrides every component animation; `!important` is the point here. */
+		/* biome-ignore-start lint/complexity/noImportantStyles: reduced-motion override */
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+		/* biome-ignore-end lint/complexity/noImportantStyles: reduced-motion override */
+	}
 }

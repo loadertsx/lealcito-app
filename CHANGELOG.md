@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Landing page at `/` in the new `landing` feature: hero with an animated member
+  phone, feature pills, explainer, auto-advancing "Cómo funciona" steps with
+  animated phone scenes, audiences, FAQ, and an early-access form.
+- Early-access form that validates leads and emails them to `LEADS_TO`, with a
+  honeypot against bots.
+- Design tokens, layout utilities (`v-stack`, `h-stack`, `center`, …) and
+  `ui-*` affordances in `app/app.css`, plus `cn()` in `app/shared/lib/cn.ts`.
+- Style guide for building components (`docs/style-guide.md`).
+- Secret types in `app/env.d.ts`.
+
+### Changed
+
+- Root document in Spanish (`es-AR`) with Figtree and Kalam fonts and a
+  translated error screen.
+- Biome parses Tailwind directives.
+
+### Removed
+
+- The React Router welcome template.
+
 ## 0.0.3
 
 ### Changed

@@ -12,6 +12,31 @@ A modern, production-ready template for building full-stack React applications u
 - 🎉 TailwindCSS for styling
 - 📖 [React Router docs](https://reactrouter.com/)
 
+## Architecture
+
+The application uses package by feature: `app/routes` contains React Router
+adapters, `app/features` owns domain functionality and schemas, `app/core`
+contains infrastructure, and `app/shared` is reserved for reusable domain-neutral
+code. Authentication, businesses, and loyalty each have `components/`,
+`schema.ts`, `queries.server.ts`, and `mutations.server.ts`. The home template
+lives beside its route in `app/routes/customer/components/welcome/`.
+
+See [architecture and dependency rules](docs/architecture.md).
+
+### Checks
+
+```sh
+bun test
+bun --bun run typecheck
+bun --bun run build
+bun run check:quality
+bun --bun run rr:routes
+```
+
+The structural migration preserves public URLs and database definitions; it does
+not require new SQL migrations. The existing Biome issues in the template CSS,
+home route, and welcome SVGs remain outside this refactor's scope.
+
 ## Getting Started
 
 ### Installation
@@ -92,9 +117,12 @@ ID, so local work cannot reach production data.
 
 ### Schema and migrations
 
-`database/schema.ts` is the source of truth. Drizzle generates the SQL and
-wrangler applies it — wrangler owns the `d1_migrations` table and already knows
-which database belongs to each environment.
+`database/schema/index.ts` aggregates the source-of-truth table definitions.
+All domain tables live in `app/features/{auth,businesses,loyalty}/schema.ts`.
+Shared column primitives and the global relation graph stay in `database/schema/`.
+
+Drizzle generates the SQL and wrangler applies it — wrangler owns the
+`d1_migrations` table and already knows which database belongs to each environment.
 
 ```sh
 bun run db:new --name add_customers   # diff the schema into database/migrations/<ts>_add_customers/
@@ -105,7 +133,7 @@ bun run db:migrate:stg                # apply to lealcito-stg  (needs `wrangler 
 bun run db:migrate:prod               # apply to lealcito-prod (needs `wrangler login`)
 
 bun run db:status:local               # migrations still pending
-bun run db:exec:local --command "select * from customers"
+bun run db:exec:local --command "select * from business_customers"
 ```
 
 Do not apply with `drizzle-kit migrate` or `drizzle-kit push`: both only reach
@@ -147,17 +175,22 @@ These configs are for Studio only; continue applying migrations with Wrangler.
 
 ### Querying
 
-`database/client.ts` exports a ready-to-use client, available from any server
-module:
+`app/core/db.server.ts` exports the D1 client. Feature queries read data and
+feature mutations write it; routes call those operations rather than querying
+Drizzle directly. For example, inside `app/features/auth/queries.server.ts`:
 
 ```ts
-import { db } from "../../database/client";
-import { customers } from "../../database/schema";
+import { db } from "../../core/db.server";
+import { users } from "./schema";
 
-export async function loader() {
-	return { customers: await db.select().from(customers) };
+// Example query; expose only the operations needed by the feature.
+export async function listUsers() {
+	return db.select({ id: users.id, email: users.email }).from(users);
 }
 ```
+
+Import other features' tables directly from their `schema.ts`, not the global
+aggregator. Schemas must never import the runtime DB client.
 
 Run `bun run cf:typegen` after changing bindings in `wrangler.jsonc` to refresh
 `worker-configuration.d.ts`.

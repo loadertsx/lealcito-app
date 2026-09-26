@@ -1,7 +1,8 @@
-import { Form, Link } from "react-router";
-import { assertSameOrigin, requestMagicLink } from "../../services/auth.server";
-import { getBusinessHome } from "../../services/business.server";
-import { sendMagicLink } from "../../services/mailer.server";
+import { assertSameOrigin } from "../../core/security.server";
+import { BusinessLogin } from "../../features/auth/components/business-login";
+import { sendMagicLink } from "../../features/auth/email.server";
+import { requestMagicLink } from "../../features/auth/mutations.server";
+import { getBusinessHome } from "../../features/businesses/queries.server";
 import type { Route } from "./+types/business-login";
 
 export function headers() {
@@ -41,38 +42,9 @@ export async function action({ params, request }: Route.ActionArgs) {
 	return { sent: true, error: null };
 }
 
-export default function BusinessLogin({
+export default function BusinessLoginRoute({
 	loaderData,
 	actionData,
 }: Route.ComponentProps) {
-	return (
-		<main>
-			<h1>Ingresar a {loaderData.business.name}</h1>
-			<p>
-				Te enviaremos un enlace para iniciar sesión o crear tu cuenta, sin
-				contraseña.
-			</p>
-			{actionData?.sent ? (
-				<p>Si podemos enviar el enlace, llegará a tu correo en unos minutos.</p>
-			) : (
-				<Form method="post">
-					<label htmlFor="email">Email</label>{" "}
-					<input
-						id="email"
-						name="email"
-						type="email"
-						autoComplete="email"
-						required
-					/>{" "}
-					<button type="submit">Enviar enlace</button>
-					{actionData?.error && <p role="alert">{actionData.error}</p>}
-				</Form>
-			)}
-			<p>
-				<Link to={`/b/${encodeURIComponent(loaderData.business.slug)}`}>
-					Volver al negocio
-				</Link>
-			</p>
-		</main>
-	);
+	return <BusinessLogin business={loaderData.business} result={actionData} />;
 }

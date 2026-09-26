@@ -1,10 +1,9 @@
-import { Form, Link, redirect } from "react-router";
-import {
-	assertSameOrigin,
-	confirmMagicLink,
-	inspectMagicLink,
-} from "../../services/auth.server";
-import { getBusinessHome } from "../../services/business.server";
+import { redirect } from "react-router";
+import { assertSameOrigin } from "../../core/security.server";
+import { AuthConfirm } from "../../features/auth/components/auth-confirm";
+import { confirmMagicLink } from "../../features/auth/mutations.server";
+import { inspectMagicLink } from "../../features/auth/queries.server";
+import { getBusinessHome } from "../../features/businesses/queries.server";
 import type { Route } from "./+types/auth-confirm";
 
 // In particular, do not send the URL's token to third-party assets via Referer.
@@ -34,27 +33,15 @@ export async function action({ request }: Route.ActionArgs) {
 	});
 }
 
-export default function AuthConfirm({
+export default function AuthConfirmRoute({
 	loaderData,
 	actionData,
 }: Route.ComponentProps) {
 	return (
-		<main>
-			<h1>Confirmar acceso</h1>
-			{loaderData.valid ? (
-				<Form method="post">
-					<input type="hidden" name="token" value={loaderData.token} />
-					<button type="submit">Confirmar e iniciar sesión</button>
-				</Form>
-			) : (
-				<p>
-					El enlace no es válido o expiró. Solicitá uno nuevo desde el negocio.
-				</p>
-			)}
-			{actionData?.error && <p role="alert">{actionData.error}</p>}
-			<p>
-				<Link to="/">Ir al inicio</Link>
-			</p>
-		</main>
+		<AuthConfirm
+			valid={loaderData.valid}
+			token={loaderData.token}
+			error={actionData?.error}
+		/>
 	);
 }

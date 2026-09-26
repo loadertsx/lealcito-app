@@ -1,6 +1,8 @@
 import { redirect } from "react-router";
-import { assertSameOrigin, getSessionUser } from "../../services/auth.server";
-import { enterBusiness, getBusinessHome } from "../../services/business.server";
+import { assertSameOrigin } from "../../core/security.server";
+import { getSessionUser } from "../../features/auth/queries.server";
+import { enterBusiness } from "../../features/businesses/mutations.server";
+import { getBusinessHome } from "../../features/businesses/queries.server";
 import type { Route } from "./+types/business-enter";
 
 export async function action({ params, request }: Route.ActionArgs) {

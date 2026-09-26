@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
-import { relations } from "./schema";
+import { relations } from "../../database/schema";
 
 /**
  * Drizzle client over the D1 binding, usable from any server module (loaders,

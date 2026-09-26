@@ -1,6 +1,4 @@
-export * from "./auth";
-export * from "./business-customers";
-export * from "./businesses";
-export * from "./catalog";
-export * from "./loyalty";
+export * from "../../app/features/auth/schema";
+export * from "../../app/features/businesses/schema";
+export * from "../../app/features/loyalty/schema";
 export { relations } from "./relations";

@@ -1,9 +1,20 @@
 import { defineRelations } from "drizzle-orm";
-import { magicLinkRequests, sessions, users } from "./auth";
-import { businessCustomers } from "./business-customers";
-import { businesses, businessStaff } from "./businesses";
-import { benefits, memberships } from "./catalog";
-import { businessMemberships, membershipBenefits } from "./loyalty";
+import {
+	magicLinkRequests,
+	sessions,
+	users,
+} from "../../app/features/auth/schema";
+import {
+	businessCustomers,
+	businesses,
+	businessStaff,
+} from "../../app/features/businesses/schema";
+import {
+	benefits,
+	businessMemberships,
+	membershipBenefits,
+	memberships,
+} from "../../app/features/loyalty/schema";
 
 const schema = {
 	users,

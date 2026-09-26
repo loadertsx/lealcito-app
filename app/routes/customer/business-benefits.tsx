@@ -1,6 +1,7 @@
-import { Link, redirect } from "react-router";
-import { getSessionUser } from "../../services/auth.server";
-import { getCurrentBenefits } from "../../services/business.server";
+import { redirect } from "react-router";
+import { getSessionUser } from "../../features/auth/queries.server";
+import { BusinessBenefits } from "../../features/loyalty/components/business-benefits";
+import { getCurrentBenefits } from "../../features/loyalty/queries.server";
 import type { Route } from "./+types/business-benefits";
 
 export function headers() {
@@ -13,26 +14,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	return getCurrentBenefits(params.slug, user.id);
 }
 
-export default function BusinessBenefits({ loaderData }: Route.ComponentProps) {
-	const { business, benefits } = loaderData;
+export default function BusinessBenefitsRoute({
+	loaderData,
+}: Route.ComponentProps) {
 	return (
-		<main>
-			<h1>Mis beneficios en {business.name}</h1>
-			{benefits.length ? (
-				<ul>
-					{benefits.map((benefit) => (
-						<li key={benefit.id}>
-							<strong>{benefit.title}</strong>: {benefit.description} —{" "}
-							{benefit.redeemedAt ? "Utilizado" : "Disponible"}
-						</li>
-					))}
-				</ul>
-			) : (
-				<p>No hay beneficios otorgados para el período actual.</p>
-			)}
-			<Link to={`/b/${encodeURIComponent(business.slug)}`}>
-				Volver al negocio
-			</Link>
-		</main>
+		<BusinessBenefits
+			business={loaderData.business}
+			benefits={loaderData.benefits}
+		/>
 	);
 }

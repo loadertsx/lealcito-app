@@ -1,6 +1,7 @@
-import { Link, redirect } from "react-router";
-import { getSessionUser } from "../../services/auth.server";
-import { requireBusinessStaff } from "../../services/business.server";
+import { redirect } from "react-router";
+import { getSessionUser } from "../../features/auth/queries.server";
+import { ManageBusiness } from "../../features/businesses/components/manage-business";
+import { requireBusinessStaff } from "../../features/businesses/queries.server";
 import type { Route } from "./+types/business-manage";
 
 export function headers() {
@@ -13,17 +14,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	return requireBusinessStaff(params.slug, user.id, "manage");
 }
 
-export default function ManageBusiness({ loaderData }: Route.ComponentProps) {
-	return (
-		<main>
-			<h1>Administrar {loaderData.business.name}</h1>
-			<p>
-				Esta sección es exclusiva del dueño. Su configuración llegará
-				próximamente.
-			</p>
-			<Link to={`/b/${encodeURIComponent(loaderData.business.slug)}`}>
-				Volver al negocio
-			</Link>
-		</main>
-	);
+export default function ManageBusinessRoute({
+	loaderData,
+}: Route.ComponentProps) {
+	return <ManageBusiness business={loaderData.business} />;
 }

@@ -2,6 +2,32 @@
 
 Lealcito has a single identity and session per user; the session does not include a business or role. The `/b/:slug` view is public. “Enter” records the person's decision for each business in `business_customers`, without granting a membership or privileges. Private routes check `business_staff` or `business_memberships` on every request. Actual promotions are not displayed yet, and purchases are not recorded.
 
+## Code ownership
+
+Authentication lives in `app/features/auth/`:
+
+- `schema.ts`: users, sessions, and magic-link requests.
+- `queries.server.ts`: `inspectMagicLink` and `getSessionUser`; neither writes.
+- `mutations.server.ts`: `requestMagicLink`, `confirmMagicLink`, and `revokeSession`.
+- `session-cookie.server.ts`: shared cookie definition and expiration header.
+- `token.ts`: pure token, email normalization, and link URL functions.
+- `email.server.ts`: authentication email content and configured link origin.
+- `components/`: login and confirmation screens with route-independent props.
+
+`app/routes/auth/` retains HTTP parsing, origin checks, redirects, response
+headers, and composition with business lookup. `app/core/` provides the D1
+client, generic email transport, and same-origin guard.
+
+Business lookup, the viewer-state projection, and staff/admin authorization live
+in `app/features/businesses/queries.server.ts`. Explicit customer entry lives in
+`app/features/businesses/mutations.server.ts`; its schema and customer/admin
+components are owned by the same feature.
+
+`app/features/loyalty/` owns membership/catalog/grant schemas, the
+`getCurrentBenefits` query, and the benefits screen. Its `mutations.server.ts`
+is intentionally empty: assignment and redemption workflows are not implemented.
+`app/services/` has been removed.
+
 ## Configuration
 
 - `RESEND_API_KEY`: Resend secret.
@@ -31,9 +57,21 @@ These routes read current permissions from D1 on every request, even if a browse
 
 ## Local verification
 
+`tests/auth-token.test.ts` covers pure token/email/link helpers;
+`tests/auth-boundaries.test.ts` covers the same-origin guard and cookie contract.
+`tests/business-entry.test.ts` exercises SQL migrations, not route behavior.
+Use the runtime checks below for the full HTTP flow.
+
+Cross-origin document POSTs may be rejected by React Router's built-in CSRF
+check with 400 before an action runs. Our same-origin guard rejects with 403
+when reached (including action-only routes and requests without `Origin`).
+Both paths must reject before mutations; do not disable framework protection
+to force a uniform status.
+
+
 1. Run `bun run db:status:local`; apply pending migrations locally only.
 2. Create two test businesses in local D1 and visit `/b/<slug>` using `bun --bun run dev` (or `bun --bun run build && bun --bun run preview`). Without a session, “Enter” redirects to the email form.
 3. Test the email form with Resend configured for your own email address; open the link and confirm sign-in. Return to the business, register entry, and check that the page shows the no-membership state; the second business should still prompt the user to enter. Verify that repeating the POST does not create another entry and that logging out deletes the session, not the entries. With local fixtures, check that active customers see only their own current benefits in their business, suspended customers cannot access benefits, staff cannot access `/admin/b/:slug/manage`, and changing the slug denies access outside one's assigned business.
-4. Run `bun test tests/auth-token.test.ts tests/business-entry.test.ts`, `bun --bun run typecheck`, and `bun --bun run build`. The `bun run typecheck` script may fail before TypeScript runs if `react-router typegen` uses Node earlier than 22.22; with this installation, it works when run through Bun.
+4. Run `bun test`, `bun --bun run typecheck`, and `bun --bun run build`. The `bun run typecheck` script may fail before TypeScript runs if `react-router typegen` uses Node earlier than 22.22; with this installation, it works when run through Bun.
 
 Per-email-address protection is the initial limit; **there is no IP-based protection yet**, nor an email retry queue. Additional edge-level protection (Cloudflare) will be needed before publicly enabling a large volume of requests.

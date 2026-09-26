@@ -4,7 +4,7 @@ import {
 	magicLinkUrl,
 	normalizeEmail,
 	randomToken,
-} from "../app/services/auth-token";
+} from "../app/features/auth/token";
 
 describe("passwordless token boundaries", () => {
 	test("creates unpredictable tokens and stores only fixed-size digests", async () => {

@@ -1,6 +1,10 @@
 import { sql } from "drizzle-orm";
 import { check, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { createdAt, primaryId, timestamp } from "./columns";
+import {
+	createdAt,
+	primaryId,
+	timestamp,
+} from "../../../database/schema/columns";
 
 export const users = sqliteTable(
 	"users",

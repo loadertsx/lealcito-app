@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.0.3
+
+### Changed
+
+- Reorganize the application into `routes`, `features`, `core`, and `shared`.
+- Group authentication, businesses, and loyalty schemas, queries, mutations,
+  and components by feature.
+- Centralize database access, email transport, and same-origin protection in `core`.
+- Move the welcome template alongside its route and remove the legacy services layer.
+- Preserve existing URLs, database definitions, and migration history.
+
+### Added
+
+- Architecture documentation describing feature ownership and dependency boundaries.
+- Tests for authentication origin checks and session cookie behavior.
+
 ## 0.0.2
 
 ### Added
